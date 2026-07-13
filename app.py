@@ -1,22 +1,32 @@
-from pprint import pprint
-
 from src.core.parser import PDFParser
+from src.core.section_detector import SectionDetector
 
 
 def main():
 
-    pdf = PDFParser("data/papers/attention.pdf")
+    parser = PDFParser("data/papers/attention.pdf")
 
-    print("=" * 80)
-    print(f"Total Pages: {pdf.get_total_pages()}")
-    print("=" * 80)
+    detector = SectionDetector()
 
-    elements = pdf.extract_layout_elements(0)
+    elements = []
 
-    print("\nFirst 10 layout elements:\n")
+    # Extract elements from every page
+    for page in range(parser.get_total_pages()):
 
-    for element in elements[:10]:
-        pprint(element)
+        elements.extend(
+            parser.extract_layout_elements(page)
+        )
+
+    headings = detector.detect_sections(elements)
+
+    print("\nDetected Headings\n")
+
+    for heading in headings:
+
+        print(
+            f"Page {heading['page'] + 1:02d} | "
+            f"{heading['title']}"
+        )
 
 
 if __name__ == "__main__":
