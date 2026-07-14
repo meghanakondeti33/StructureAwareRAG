@@ -1,0 +1,28 @@
+# Virtual environment
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Hugging Face cache
+.cache/
+
+# Model cache
+hf_cache/
+
+# FAISS index (optional)
+data/faiss.index
+
+# Pickle files (optional)
+*.pkl

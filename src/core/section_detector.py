@@ -1,139 +1,75 @@
 """
 section_detector.py
 
-Detects section headings in research papers using
-simple layout heuristics.
+Detects section headings using the HeadingScorer.
 
 Author: Meghana
 Project: Structure-Aware Multimodal Research Paper Assistant
 """
 
-import re
-from typing import List, Dict
+from collections import Counter
+from src.core.heading_scorer import HeadingScorer
 
 
 class SectionDetector:
 
-    def __init__(self):
-        pass
-
-    def is_section_heading(self, element: Dict, body_font: float) -> bool:
+    def __init__(self, threshold=5):
         """
-        Returns True if the given text span is likely to be
-        a section heading.
+        threshold:
+            Minimum score required for a text span
+            to be considered a heading.
         """
 
-        text = element["text"].strip()
+        self.threshold = threshold
+        self.scorer = HeadingScorer()
 
-        if not text:
-            return False
+    def detect_sections(self, elements):
 
-        # Ignore arXiv metadata
-        if text.lower().startswith("arxiv:"):
-            return False
+        # ---------------------------------------------------
+        # Estimate Body Font
+        # ---------------------------------------------------
 
-        # Ignore pure numbers
-        if text.isdigit():
-            return False
+        font_sizes = [
+            round(e["font_size"])
+            for e in elements
+        ]
 
-        # Ignore decimal numbers like 28.4, 91.3
-        try:
-            float(text)
-            return False
-        except ValueError:
-            pass
-
-        # Ignore long paragraphs
-        if len(text) > 80:
-            return False
-
-        size = element["font_size"]
-        font = element["font"].lower()
-
-        # -----------------------------
-        # Paper Title
-        # -----------------------------
-        if size >= body_font + 5 and len(text) < 120:
-            return True
-
-        # -----------------------------
-        # Common research paper headings
-        # -----------------------------
-        heading_keywords = {
-            "abstract",
-            "introduction",
-            "background",
-            "related work",
-            "method",
-            "methodology",
-            "model",
-            "model architecture",
-            "experiments",
-            "results",
-            "evaluation",
-            "training",
-            "discussion",
-            "conclusion",
-            "references",
-            "acknowledgements",
-            "acknowledgments"
-        }
-
-        if text.lower() in heading_keywords:
-            return True
-
-        # Appendix
-        if text.lower().startswith("appendix"):
-            return True
-
-        # -----------------------------
-        # Numbered headings
-        # Examples:
-        # 1 Introduction
-        # 3.2 Decoder
-        # 4.1.3 Attention
-        # -----------------------------
-        if re.match(r"^\d+(\.\d+)*\.?\s+[A-Za-z]", text):
-            return True
-
-        # -----------------------------
-        # Bold headings
-        # -----------------------------
-        if (
-            size > body_font
-            and ("bold" in font or "medi" in font)
-            and len(text) < 60
-        ):
-            return True
-
-        return False
-
-    def detect_sections(self, elements: List[Dict]) -> List[Dict]:
-        """
-        Detect all section headings from parser output.
-        """
-
-        # Estimate body font size
-        font_counter = {}
-
-        for element in elements:
-
-            text = element["text"].strip()
-
-            if not text:
-                continue
-
-            size = round(element["font_size"])
-
-            font_counter[size] = font_counter.get(size, 0) + 1
-
-        body_font = max(font_counter, key=font_counter.get)
+        body_font = Counter(font_sizes).most_common(1)[0][0]
 
         headings = []
 
+        print("\n")
+        print("=" * 120)
+        print("Heading Detection")
+        print("=" * 120)
+
+        print(
+            f"{'Score':<8}"
+            f"{'Page':<8}"
+            f"{'Decision':<10}"
+            f"{'Level':<8}"
+            f"Heading"
+        )
+
+        print("-" * 120)
+
+        # ---------------------------------------------------
+        # Analyze every span
+        # ---------------------------------------------------
+
         for element in elements:
 
-            if self.is_section_heading(element, body_font):
+            result = self.scorer.analyze(
+                element,
+                body_font
+            )
+
+            score = result["score"]
+
+            # Decision is made HERE
+            decision = score >= self.threshold
+
+            if decision:
 
                 headings.append({
 
@@ -143,10 +79,38 @@ class SectionDetector:
 
                     "font_size": element["font_size"],
 
-                    "font": element["font"],
+                    "bbox": element["bbox"],
 
-                    "bbox": element["bbox"]
+                    "level": result["level"],
+
+                    "score": score,
+
+                    "reasons": result["reasons"]
 
                 })
+
+            # Print useful debug information
+            if score >= 3 or score <= -5:
+
+                print(
+                    f"{score:<8}"
+                    f"{element['page'] + 1:<8}"
+                    f"{'YES' if decision else 'NO':<10}"
+                    f"{result['level']:<8}"
+                    f"{element['text']}"
+                )
+
+                print(
+                    " " * 32 +
+                    "Reasons : " +
+                    ", ".join(result["reasons"])
+                )
+
+                print("-" * 120)
+
+        print("\n")
+        print("=" * 120)
+        print(f"Detected Headings : {len(headings)}")
+        print("=" * 120)
 
         return headings
