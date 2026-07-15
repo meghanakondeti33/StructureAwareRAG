@@ -15,7 +15,7 @@ from src.retrieval.embeddings import EmbeddingGenerator
 from src.retrieval.vector_store import VectorStore
 from src.retrieval.retriever import Retriever
 
-from src.llm.gemini_client import GeminiClient
+from src.generation.gemini_client import GeminiClient
 
 
 def main():
