@@ -5,7 +5,7 @@ Main pipeline for the Structure-Aware Multimodal Research Paper Assistant.
 
 Author: Meghana
 """
-
+import joblib
 from src.core.parser import PDFParser
 from src.core.section_detector import SectionDetector
 from src.core.metadata_builder import MetadataBuilder
@@ -84,10 +84,14 @@ def main():
     )
 
     chunks = chunker.chunk_sections(
-        sections
-    )
+    sections
+)
 
     print(f"Generated Chunks : {len(chunks)}")
+
+    # Save chunks for Streamlit
+    joblib.dump(chunks, "data/chunks.pkl")
+    print("Chunks saved to data/chunks.pkl")
 
     # ---------------------------------------------------------
     # Embeddings
