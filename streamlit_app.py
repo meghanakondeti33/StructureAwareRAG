@@ -228,7 +228,7 @@ if uploaded_file is not None:
 
             st.divider()
 
-            st.subheader("📚 Retrieved Sections")
+            st.subheader("Retrieved Sections")
 
             for i, result in enumerate(results, start=1):
 
@@ -260,7 +260,7 @@ if uploaded_file is not None:
 else:
 
     st.info(
-        "👈 Upload a research paper from the sidebar to get started."
+        "Upload a research paper from the sidebar to get started."
     )
 
 st.divider()
